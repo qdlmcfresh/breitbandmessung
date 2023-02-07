@@ -1,0 +1,44 @@
+version: "3"
+services:
+  influxdb:
+    image: influxdb:1.8
+    container_name: influxdb
+    restart: unless-stopped
+    ports:
+      - '8086:8086'
+    environment:
+      INFLUXDB_DB: breitbandmessung
+    volumes:
+      - './influxdb:/var/lib/influxdb'
+
+  chronograf:
+    image: chronograf:latest
+    container_name: chronograf
+    restart: unless-stopped
+    ports:
+      - '8888:8888'
+    environment:
+      INFLUXDB_URL: http://influxdb:8086
+      PROXY_LOCATION: speed
+      VIRTUAL_HOST: speed.haus.lan
+      VIRTUAL_PORT: 8888
+    volumes:
+      - './chronograf:/var/lib/chronograf'
+    links:
+      - influxdb
+    depends_on:
+      - influxdb
+
+  breitbandmessung:
+    image: shneezin/breitbandmessung:latest
+    # Build locally
+    # build: .
+    container_name: breitbandmessung
+    restart: unless-stopped
+    volumes:
+      - './breitband_config:/usr/src/app/config:rw'
+      - './messprotokolle:/export/:rw'
+    links:
+      - influxdb
+    depends_on:
+      - influxdb
